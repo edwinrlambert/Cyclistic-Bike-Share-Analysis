@@ -246,4 +246,43 @@ Now, we're going to combine all the data from the start_station_name and end_sta
 **Action Items**:    
 So, for the purpose, we're going to change the IDs without 21/23 to ones that have 21/23 to be consistent.
 
+#### **Finding station names with null end_lat or end_lng values.**
+
+Since, we found that there are null values only in end_lat or end_lng, we are going to try and find those values as possible from the other datas.
+
+There are 5 distinct station names with null values for end_lat and end_lng. The distinct station names are:
+
+| Row | End Station Name             | End Lat | End Lng |
+|-----|------------------------------|---------|---------|
+| 1   | Drexel Ave & 60th St         | null    | null    |
+| 2   | Elizabeth St & Randolph St   | null    | null    |
+| 3   | Halsted St & Fulton St       | null    | null    |
+| 4   | Lincoln Ave & Byron St       | null    | null    |
+| 5   | Stony Island Ave & 63rd St   | null    | null    |
+
+Upon searching throughout the whole dataset for these distinct station names, we can find the latitude and longitude of these stations.
+
+| Row | End Station Name            | End Lat   | End Lng    |
+|-----|-----------------------------|-----------|------------|
+| 1   | Drexel Ave & 60th St        | null      | null       |
+| 2   | Drexel Ave & 60th St        | 41.785861 | -87.604553 |
+| 3   | Elizabeth St & Randolph St  | null      | null       |
+| 4   | Elizabeth St & Randolph St  | 41.884336 | -87.658902 |
+| 5   | Halsted St & Fulton St      | null      | null       |
+| 6   | Halsted St & Fulton St      | 41.886871 | -87.648089 |
+| 7   | Lincoln Ave & Byron St      | null      | null       |
+| 8   | Lincoln Ave & Byron St      | 41.952372 | -87.677296 |
+| 9   | Stony Island Ave & 63rd St  | null      | null       |
+| 10  | Stony Island Ave & 63rd St  | 0.0       | 0.0        |
+| 11  | Stony Island Ave & 63rd St  | 41.780506 | -87.586853 |
+
+**Observation**:
+- We can see that for **Stony Island Ave & 63rd St**, there is a value as 0.0 for latitude and longitude. Therefore, let's search throughout the start_lat, start_lng and end_lat, end_lng for values with 0.0 as the values.
+- Upon running the query, I found that there are no values for start station names with start_lat and start_lng with 0.0 as the value.
+- And for end station names, I found it's only the one value of "Stony Island Ave & 63rd St" that have 0.0 as the value.
+
+There are 830 different end_lat and end_lng without a station name. I checked to see if there are values 
+
+**Action Item**:
+- We're going to fill in the value for the null and 0.0 values in end_lat and end_lng to the same value mentioned above.
 
