@@ -2,9 +2,9 @@
 
 This repository contains the analysis done for the Google Data Analytics Capstone Project. This project is to showcase my skills and analysis, based on what I know and what I learned from this professional certification.
 
-**Cyclistic** is a bike-sharing program l in 2016, that features more than 5,824 bicycles and 692 docking station. The company also offer reclining bikes, hand tricycles, and cargo bikes, making bike-share more inclusive.
+**Cyclistic** is a bike-sharing program l in 2016, that features more than 5,824 bicycles and 692 docking stations. The company also offer reclining bikes, hand tricycles, and cargo bikes, making bike-share more inclusive.
 
-Cyclistic is successful in their business and appealing to the broad consumer segment. Customer who purchase single-ride or full-day passes are referred to as casual riders and customer who purchase annual memberships are Cyclistic members.
+Cyclistic is successful in its business and appealing to the broad consumer segment. Customers who purchase single-ride or full-day passes are referred to as casual riders and customers who purchase annual memberships are Cyclistic members.
 
 ## **Business Task**
 
@@ -16,13 +16,13 @@ The analysis centers around three refined questions to guide the marketing progr
 
 1. **How do annual members and casual riders use Cyclistic bikes differently?**
 2. **Why would casual riders buy Cyclistic annual memberships?**
-3. **How can Cyclistic use digital media to influence causl riders to become members?**
+3. **How can Cyclistic use digital media to influence casual riders to become members?**
 
 ### **Guiding Questions in this Phase**
 
-#### 1. What are the problem that we are trying to solve?
+#### 1. What are the problems that we are trying to solve?
 
-For this problem, what we trying to understand if how casual riders and annual riders use the bike-sharing service differently. What are the factors that are different between the two types of population and all insights can be used to convert casual riders to annual riders.
+For this problem, what we trying to understand is how casual riders and annual riders use the bike-sharing service differently. What are the factors that are different between the two types of population and all insights can be used to convert casual riders to annual riders.
 
 #### 2. How can the insights drive business decisions?
 
@@ -46,7 +46,7 @@ Now we gather, assess, and prepare the necessary data that will allow us to answ
 
 ### **Data Collection**
 
-We're using the Cyclistic's historical trip data for the past 12 months.
+We're using the Cyclistic's historical trip data for the past 12 months. The data is organized in a structured format, as CSV files, with each file representing trip data for a particular month.
 
 **Data Source**: [divvy-tripdata](https://divvy-tripdata.s3.amazonaws.com/index.html)
 
@@ -282,16 +282,34 @@ Upon searching throughout the whole dataset for these distinct station names, we
 **Observation**:
 
 - We can see that for **Stony Island Ave & 63rd St**, there is a value as 0.0 for latitude and longitude. Therefore, let's search throughout the start_lat, start_lng and end_lat, end_lng for values with 0.0 as the values.
-    - Upon running the query, I found that there are no values for start station names with start_lat and start_lng with 0.0 as the value.
-    - And for end station names, I found it's only the one value of "Stony Island Ave & 63rd St" that have 0.0 as the value.
+  - Upon running the query, I found that there are no values for start station names with start_lat and start_lng with 0.0 as the value.
+  - And for end station names, I found it's only the one value of "Stony Island Ave & 63rd St" that have 0.0 as the value.
 
 **Action Item**:
 
 - We're going to fill in the value for the null and 0.0 values in end_lat and end_lng to the same value mentioned above.
 
-#### **Finding the member types available in thsi dataset**
+#### **Finding the member types available in this dataset**
 
 There are two types of members in this dataset:
 
 - casual riders
 - rides with membership
+
+### **Data Cleaning**
+
+Based on our exploration, we are going to clean the data step by step. We are using the `CREATE TABLE` to create a cleaned data and pass in all the separate sections as `WITH tablename` queries, so that it can be streamlined.
+
+1. First, we create a query to drop the cleaned table, if existing.
+2. Then we create the cleaned table as
+   1. Exclude trips that are shorter than one minute or longer than one day as outliers, in the assumption that shorter rides were workers and people testing the bikes, or unsatisfied by the condition of the bikes and that longer rides are people forgetting to return the bikes or the bikes being stolen.
+   2. Replace specific duplicate station IDs with unique identifiers that starts with 21/23.
+   3. Find the minimum latitude and longitude for each station to handle missing values.
+   4. Use the minimum coordinates found in the previous step to fill in missing values for end coordinates.
+   5. Replace null station names with "Unknown" and null station IDs with '0'.
+   6. Exclude rows that lack end destination information.
+   7. Finalize the table with all cleaned data.
+
+## **III. PROCESS**
+
+We're going to continue using SQL for our process phase as Excel have a limit of 1,048,576 rows.
