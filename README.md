@@ -282,8 +282,8 @@ Upon searching throughout the whole dataset for these distinct station names, we
 **Observation**:
 
 - We can see that for **Stony Island Ave & 63rd St**, there is a value as 0.0 for latitude and longitude. Therefore, let's search throughout the start_lat, start_lng and end_lat, end_lng for values with 0.0 as the values.
-  - Upon running the query, I found that there are no values for start station names with start_lat and start_lng with 0.0 as the value.
-  - And for end station names, I found it's only the one value of "Stony Island Ave & 63rd St" that have 0.0 as the value.
+- Upon running the query, I found that there are no values for start station names with start_lat and start_lng with 0.0 as the value.
+- And for end station names, I found it's only the one value of "Stony Island Ave & 63rd St" that have 0.0 as the value.
 
 **Action Item**:
 
