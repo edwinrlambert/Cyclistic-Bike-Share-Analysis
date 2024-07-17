@@ -176,16 +176,16 @@ After writing a SQL query to find missing value for each columns, here is what a
 
 **Observations**:
 - The missing values might have occurred due to errors in recording data due to some technical glitches.
-- There are **269,839** rows without a start station, but with an end station. There are **163,933** rows without a start station, but with an end station and not have the same latitude and longitude for start and end station. There are **17,226** rows without a start station, but with an end station and have the same latitude and longitude for start and end station.  
+- There are **269,839** rows without a start station, but with an end station. 
     - This have the possibility that these bikes were started from a non-designated location and returned to a designated location. 
     - If these bikes were reported stolen, then this can also mean that these bikes were found and returned to their respective designated locations.
     - Some data are spanning over a short period of time and short period of geographical distance that suggests that workers might be taking the bikes kept near the docking station and parking it correctly.
     - It can also suggest that customers were unsatisfied with the bikes they got and returned it back to the station.
-- There are **299,799** rows with a start station, but without an end station. There are **168,076** rows with a start station, but without an end station and not have the same latitude and longitude for start and end station. There are **22,737** rows with a start station, but without an end station and have the same latitude and longitude for start and end station. 
+- There are **299,799** rows with a start station, but without an end station. There are **149,386** rows with a start station, but without an end station and not have the same latitude and longitude for start and end station. There are **34,700** rows with a start station, but without an end station and have the same latitude and longitude for start and end station. 
     - This have the possibility that the data was recorded when the trip is ongoing. 
     - It can also mean that these trips were one-way trips where the bikes were left at non-designated location, or can be stolen.
     - Some data are spanning over a short period of time and short period of geographical distance that suggests that customer took the bike from the station, was unsatisfied with the bike due to some mechanical or other issues and parked the vehicle near the station.
-- There are **248,460** rows without both start and end stations. There are **76,539** rows without both start and end stations and not have the same latitude and longitude for start and end station. There are **79,006** rows without both start and end stations and have the same latitude and longitude for start and end station. 
+- There are **248,460** rows without both start and end stations. There are **106,170** rows without both start and end stations and not have the same latitude and longitude for start and end station. There are **58,932** rows without both start and end stations and have the same latitude and longitude for start and end station. 
     - This have the possibility that these bikes were started and ended at places that are not the designated station for these bikes.
     - Some data are spanning over a short period of time and short period of geographical distance that suggests that customer took the bike from where they got and kept it there or somewhere close.
 
@@ -278,8 +278,8 @@ Upon searching throughout the whole dataset for these distinct station names, we
 
 **Observation**:
 - We can see that for **Stony Island Ave & 63rd St**, there is a value as 0.0 for latitude and longitude. Therefore, let's search throughout the start_lat, start_lng and end_lat, end_lng for values with 0.0 as the values.
-- Upon running the query, I found that there are no values for start station names with start_lat and start_lng with 0.0 as the value.
-- And for end station names, I found it's only the one value of "Stony Island Ave & 63rd St" that have 0.0 as the value.
+    - Upon running the query, I found that there are no values for start station names with start_lat and start_lng with 0.0 as the value.
+    - And for end station names, I found it's only the one value of "Stony Island Ave & 63rd St" that have 0.0 as the value.
 
 There are 830 different end_lat and end_lng without a station name. I checked to see if there are values 
 
