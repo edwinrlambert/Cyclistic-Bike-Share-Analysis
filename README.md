@@ -316,3 +316,23 @@ We're going to continue using SQL for our process phase as Excel have a limit of
 
 Before we analyze our cleaned dataset, we are going to process it and create some new columns by doing some calculations on existing column that will help us further in our analysis.
 
+### **Overview**
+
+The SQL operations are structured into three main parts:
+
+1. **Dropping Columns**: Removes any existing columns that are to be recalculated or redefined.
+2. **Adding Columns**: Introduces new columns to the dataset which will hold data calculated in the subsequent steps.
+3. **Updating Columns**: Fills the newly added columns with values derived from the existing data in the dataset.
+
+### **Columns Description**
+
+Here are the columns created in this SQL script:
+
+- `ride_length`: Duration of the ride formatted as HH:MM:SS.
+- `day_of_week`: Numeric representation of the day of the week extracted from the ride start timestamp.
+- `trip_distance`: Calculated distance of the trip based on geographical coordinates.
+- `is_weekend`: Indicates whether the ride occurred on a weekend.
+- `is_peak_hour`: Identifies if the ride falls within typical morning or evening peak hours.
+- `ride_type`: Categorizes the ride based on its duration into 'Short', 'Medium', or 'Long'.
+- `season`: Determines the season when the ride took place.
+- `day_part`: Classifies the time of the day when the ride started (Morning, Afternoon, Evening, Night).

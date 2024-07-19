@@ -1,8 +1,8 @@
 -- DROP THE TABLE, IF EXISTING.
-DROP TABLE `data-certifications-erl.divvy_tripdata.2023_cyclistic_tripdata_cleaned`;
+DROP TABLE IF EXISTS `data-certifications-erl.divvy_tripdata.2023_cyclistic_tripdata_cleaned`;
 
 -- CREATE A NEW TABLE WITH CLEANED DATA FOR ANALYSIS.
-CREATE TABLE `data-certifications-erl.divvy_tripdata.2023_cyclistic_tripdata_cleaned` AS
+CREATE TABLE         `data-certifications-erl.divvy_tripdata.2023_cyclistic_tripdata_cleaned` AS
 
 -- Remove shorter than a minute and longer than a day trips from the table.
     WITH    table_with_removed_shorter_longer_rides AS (
