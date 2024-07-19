@@ -313,3 +313,6 @@ Based on our exploration, we are going to clean the data step by step. We are us
 ## **III. PROCESS**
 
 We're going to continue using SQL for our process phase as Excel have a limit of 1,048,576 rows.
+
+Before we analyze our cleaned dataset, we are going to process it and create some new columns by doing some calculations on existing column that will help us further in our analysis.
+
