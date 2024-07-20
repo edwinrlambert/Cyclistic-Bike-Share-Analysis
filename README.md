@@ -104,7 +104,7 @@ I am also partitioning the table by month, as it allows to manage the data effic
 CREATE TABLE  `data-certifications-erl.divvy_tripdata.2023_cyclistic_tripdata_raw`
 PARTITION BY  DATE_TRUNC(started_at, MONTH)
 OPTIONS       (
-              partition_expiration_days = 365,
+              partition_expiration_days = 730,
               description = "Partitioned Table of Cyclistic Bike Rides by Month"
               ) AS
 SELECT        *
@@ -161,34 +161,34 @@ SELECT  COUNT(*) AS row_count
 FROM    `data-certifications-erl.divvy_tripdata.2023_cyclistic_tripdata_raw`;
 ```
 
-There are **3,329,418** rows of bike ride data in this dataset.
+There are **5,719,877** rows of bike ride data in this dataset.
 
 #### **Finding Missing in each columns**
 
 After writing a SQL query to find missing value for each columns, here is what are the columns with missing values:
 
-- **start_station_name**: Have 518,299 null values
-- **start_station_id**: Have 518,299 null values
-- **end_station_name**: Have 548,239 null values
-- **end_station_id**: Have 548,239 null values
-- **end_lat**: Have 4,530 null values
-- **end_lng**: Have 4,530 null values
+- **start_station_name**: Have 875,716 null values
+- **start_station_id**: Have 875,848 null values
+- **end_station_name**: Have 929,202 null values
+- **end_station_id**: Have 929,343 null values
+- **end_lat**: Have 6,990 null values
+- **end_lng**: Have 6,990 null values
 
 **Observations**:
 
-- The missing values might have occurred due to errors in recording data due to some technical glitches.
-- There are **269,839** rows without a start station, but with an end station.
+- There are **458,726** rows without a start station, but with an end station.
   - This have the possibility that these bikes were started from a non-designated location and returned to a designated location.
   - If these bikes were reported stolen, then this can also mean that these bikes were found and returned to their respective designated locations.
   - Some data are spanning over a short period of time and short period of geographical distance that suggests that workers might be taking the bikes kept near the docking station and parking it correctly.
   - It can also suggest that customers were unsatisfied with the bikes they got and returned it back to the station.
-- There are **299,799** rows with a start station, but without an end station.
+- There are **512,222** rows with a start station, but without an end station.
   - This have the possibility that the data was recorded when the trip is ongoing.
   - It can also mean that these trips were one-way trips where the bikes were left at non-designated location, or can be stolen.
   - Some data are spanning over a short period of time and short period of geographical distance that suggests that customer took the bike from the station, was unsatisfied with the bike due to some mechanical or other issues and parked the vehicle near the station.
-- There are **248,460** rows without both start and end stations.
+- There are **417,137** rows without both start and end stations.
   - This have the possibility that these bikes were started and ended at places that are not the designated station for these bikes.
   - Some data are spanning over a short period of time and short period of geographical distance that suggests that customer took the bike from where they got and kept it there or somewhere close.
+- The missing values might also have occurred due to errors in recording data due to some technical glitches.
 
 #### **Making sure the ride_id is consistent**
 
@@ -220,7 +220,7 @@ Rides longer than a day can be due to bikes not returned properly, possible thef
 
 **Observations**:
 
-- There are **139,383** (4.18%) of rows with shorter rides (less than a minute) out of which **53,281** (1.60%) of rows don't have either start station or end station.
+- There are **262,293** (4.18%) of rows with shorter rides (less than a minute) out of which **53,281** (1.60%) of rows don't have either start station or end station.
 - There are **4,311** (0.12%) of rows with longer rides (longer than a day) out of which **4,233** (0.12%) of rows don't have either start station or end station.
 
 **Action Item**:
