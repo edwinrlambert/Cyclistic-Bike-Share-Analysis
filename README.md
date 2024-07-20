@@ -336,3 +336,8 @@ Here are the columns created in this SQL script:
 - `ride_type`: Categorizes the ride based on its duration into 'Short', 'Medium', or 'Long'.
 - `season`: Determines the season when the ride took place.
 - `day_part`: Classifies the time of the day when the ride started (Morning, Afternoon, Evening, Night).
+
+## **IV. ANALYZE**
+
+Now, I am going to analyze the new table using R.
+

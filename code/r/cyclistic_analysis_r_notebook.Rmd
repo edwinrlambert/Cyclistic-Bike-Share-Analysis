@@ -1,0 +1,254 @@
+---
+title: "Cyclistic Bike Analysis using R"
+output: html_notebook
+---
+
+Here, I am going to use R and analyze the processed table to find meaning information for our project. I have combined, cleaned and processed the table for use.
+
+**Here is to review our business task again**: The primary goal of this analysis is to understand how casual riders (who purchase single-ride or full-day passes) and annual members use Cyclistic bikes differently. Insights from this analysis will inform targeted marketing strategies to convert casual riders into annual members.
+
+## **Install and Import Libraries**
+
+These are the libraries that we are going to use for this project.
+
+```{r}
+# # Install packages if they are not already installed
+# install.packages("tidyverse")  # For data manipulation and ggplot2 for visualization
+# install.packages("lubridate")  # For handling date-time data
+# install.packages("readr")      # For reading CSV files efficiently
+
+# Load the libraries
+library(tidyverse)
+library(lubridate)
+library(readr)
+```
+
+## Load the Dataset
+
+We're going to upload the CSV file for analysis.
+
+```{r}
+# Load the CSV file to the DataFrame
+cyclistic_data <- read_csv("../../dataset/cleaned/2023_cyclistic_tripdata.csv", col_types = cols(
+  ride_id = col_character(),
+  rideable_type = col_character(),
+  started_at = col_datetime(format = "%Y-%m-%d %H:%M:%S"),
+  ended_at = col_datetime(format = "%Y-%m-%d %H:%M:%S"),
+  day_of_week = col_integer(),
+  is_peak_hour = col_character(),
+  is_weekend = col_character(),
+  day_part = col_character(),
+  season = col_character(),
+  ride_length = col_time(format = "%H:%M:%S"),
+  ride_type = col_character(),
+  start_station_name = col_character(),
+  start_station_id = col_character(),
+  end_station_name = col_character(),
+  end_station_id = col_character(),
+  start_lat = col_double(),
+  start_lng = col_double(),
+  end_lat = col_double(),
+  end_lng = col_double(),
+  trip_distance = col_double(),
+  member_casual = col_character()
+))
+
+# Modify the day_of_week column to use day names instead of numbers
+cyclistic_data <- cyclistic_data %>%
+  mutate(day_of_week = factor(day_of_week, 
+                              levels = 1:7, 
+                              labels = c("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday")))
+
+# Convert ride_length to seconds and overwrite the original column
+cyclistic_data <- cyclistic_data %>%
+  mutate(ride_length = as.numeric(ride_length, units = "secs"))
+
+# Check the structure of the data
+str(cyclistic_data)
+
+# Print rows from the DataFrame.
+head(cyclistic_data)
+
+```
+
+```{r}
+# Set pre-defined colors for each type.
+color_casual <- "#FF5733" # Orange
+color_member <- "#2E86C1" # Blue
+```
+
+## **Descriptive Analysis**
+
+Descriptive analysis in the context of bike-sharing data involves summarizing the main characteristics of the dataset to provide a clear understanding of how casual riders and annual members use the Cyclistic bikes.
+
+The objective of conducting a descriptive analysis in this project is to establish a foundational understanding of the data at hand.
+
+### Overall Usage Statistics
+
+**Total Rides, Average Ride Length and Average Distance**
+
+```{r}
+# Find the average ride_length and distance by casual and members riders.
+usage_stats <- cyclistic_data %>% 
+  group_by(member_casual) %>% 
+  summarise(
+    total_rides = n(),
+    average_ride_length = mean(ride_length),
+    average_distance = mean(trip_distance)
+  )
+
+print(usage_stats)
+
+# Visualize total rides for each rider type.
+ggplot(
+  usage_stats,
+  aes(
+    x = member_casual,
+    y = total_rides,
+    fill = member_casual
+  )
+) +
+  geom_bar(stat = "identity") +
+  scale_fill_manual(values = c("casual" = color_casual, "member" = color_member)) +
+  labs(
+    title = "Total Rides by Rider Type",
+    x = "Rider Type",
+    y = "Total Rides",
+    fill = "Rider Type"
+    ) +
+  theme_minimal()
+
+# Visualize average ride length for each rider type.
+ggplot(
+  usage_stats,
+  aes(
+    x = member_casual,
+    y = (average_ride_length / 60),
+    fill = member_casual
+  )
+) +
+  geom_bar(stat = "identity") +
+  scale_fill_manual(values = c("casual" = color_casual, "member" = color_member)) +
+  labs(
+    title = "Average Ride Length by Rider Type",
+    x = "Rider Type",
+    y = "Average Ride Length (minutes)",
+    fill = "Rider Type"
+    ) +
+  theme_minimal()
+
+# Visualize average trip distance for each rider type.
+ggplot(
+  usage_stats,
+  aes(
+    x = member_casual,
+    y = average_distance,
+    fill = member_casual
+  )
+) +
+  geom_bar(stat = "identity") +
+  scale_fill_manual(values = c("casual" = color_casual, "member" = color_member)) +
+  labs(
+    title = "Average Distance by Rider Type",
+    x = "Rider Type",
+    y = "Average Distance",
+    fill = "Rider Type"
+    ) +
+  theme_minimal()
+```
+
+### **Temporal Analysis**
+
+**Ride Frequency by Day of the Week**
+
+```{r}
+# Find the ride frequency by day of week by casual and members riders.
+ride_freq_by_day_of_week <- cyclistic_data %>% 
+  group_by(member_casual, day_of_week) %>% 
+  summarise(
+    total_rides = n(),
+    .groups = "drop"
+  )
+
+# Visualize ride frequency by day of week.
+ggplot(
+  ride_freq_by_day_of_week,
+  aes(
+    x = day_of_week,
+    y = total_rides,
+    fill = member_casual
+  )
+) +
+  geom_bar(stat = "identity", position = "dodge") +
+  scale_y_continuous(labels = scales::comma) +  
+  scale_fill_manual(values = c("casual" = color_casual, "member" = color_member)) +
+  labs(
+    title = "Ride Frequency by Day of the Week",
+    x = "Day of Week",
+    y = "Total Rides",
+    fill = "Rider Type"
+  ) + 
+  theme_minimal()
+```
+
+**Ride Frequency During Peak Hours**
+
+```{r}
+# Find the peak hour usage by casual and members riders.
+peak_hour_stats <- cyclistic_data %>% 
+  group_by(member_casual, is_peak_hour) %>% 
+  summarise(total_rides = n(), 
+            .groups = "drop")
+
+# Visualize ride frequency by day of week.
+ggplot(
+  peak_hour_stats,
+  aes(
+    x = is_peak_hour,
+    y = total_rides,
+    fill = member_casual
+  )
+) +
+  geom_bar(stat = "identity", position = "dodge") +
+  scale_y_continuous(labels = scales::comma) +  
+  scale_fill_manual(values = c("casual" = color_casual, "member" = color_member)) +
+  labs(
+    title = "Ride Frequency During Peak Hours",
+    x = "Is Peak Hour",
+    y = "Total Rides",
+    fill = "Rider Type"
+  ) + 
+  theme_minimal()
+```
+
+**Ride Frequency (Weekday vs. Weekend)**
+
+```{r}
+# Find the ride frequency on weekends and weekdays by casual and members riders.
+weekend_weekday_stats <- cyclistic_data %>% 
+    mutate(weekday_weekend = if_else(
+      is_weekend == "Yes", "Weekend", "Weekday")) %>%
+  group_by(member_casual, weekday_weekend) %>% 
+  summarise(total_rides = n(),
+            .groups = 'drop')
+
+# Visualize ride frequency by weekdays vs weekends.
+ggplot(
+  weekend_weekday_stats,
+  aes(
+    x = weekday_weekend,
+    y = total_rides,
+    fill = member_casual
+  )
+) +
+  geom_bar(stat = "identity", position = "dodge") +
+  scale_y_continuous(labels = scales::comma) + 
+  scale_fill_manual(values = c("casual" = color_casual, "member" = color_member)) +
+  labs(
+    title = "Ride Frequency (Weekday vs. Weekend)",
+    x = "Weekday vs. Weekend",
+    y = "Total Rides",
+    fill = "Rider Type"
+  ) + 
+  theme_minimal()
+```
