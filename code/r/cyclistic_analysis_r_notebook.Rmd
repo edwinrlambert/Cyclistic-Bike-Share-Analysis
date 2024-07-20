@@ -88,7 +88,7 @@ The objective of conducting a descriptive analysis in this project is to establi
 **Total Rides, Average Ride Length and Average Distance**
 
 ```{r}
-# Find the average ride_length and distance by casual and members riders.
+# Find the average ride_length and distance by rider type.
 usage_stats <- cyclistic_data %>% 
   group_by(member_casual) %>% 
   summarise(
@@ -162,7 +162,7 @@ ggplot(
 **Ride Frequency by Day of the Week**
 
 ```{r}
-# Find the ride frequency by day of week by casual and members riders.
+# Find the ride frequency by day of week by rider type.
 ride_freq_by_day_of_week <- cyclistic_data %>% 
   group_by(member_casual, day_of_week) %>% 
   summarise(
@@ -194,7 +194,7 @@ ggplot(
 **Ride Frequency During Peak Hours**
 
 ```{r}
-# Find the peak hour usage by casual and members riders.
+# Find the peak hour usage by rider type.
 peak_hour_stats <- cyclistic_data %>% 
   group_by(member_casual, is_peak_hour) %>% 
   summarise(total_rides = n(), 
@@ -224,7 +224,7 @@ ggplot(
 **Ride Frequency (Weekday vs. Weekend)**
 
 ```{r}
-# Find the ride frequency on weekends and weekdays by casual and members riders.
+# Find the ride frequency on weekends and weekdays by rider type.
 weekend_weekday_stats <- cyclistic_data %>% 
     mutate(weekday_weekend = if_else(
       is_weekend == "Yes", "Weekend", "Weekday")) %>%
@@ -242,11 +242,72 @@ ggplot(
   )
 ) +
   geom_bar(stat = "identity", position = "dodge") +
-  scale_y_continuous(labels = scales::comma) + 
   scale_fill_manual(values = c("casual" = color_casual, "member" = color_member)) +
   labs(
     title = "Ride Frequency (Weekday vs. Weekend)",
     x = "Weekday vs. Weekend",
+    y = "Total Rides",
+    fill = "Rider Type"
+  ) + 
+  theme_minimal()
+```
+
+**Ride Frequency by Part of Day**
+
+```{r}
+# Find the ride frequency by part of day by rider type.
+day_parts_stats <- cyclistic_data %>% 
+  mutate(day_part = factor(
+    day_part, levels = c("Morning", "Afternoon", "Evening", "Night"))) %>%
+  group_by(member_casual, day_part) %>% 
+  summarise(total_rides = n(),
+            .groups = "drop")
+
+# Visualize ride frequency by part of day.
+ggplot(
+  day_parts_stats,
+  aes(
+    x = day_part,
+    y = total_rides,
+    fill = member_casual
+  )
+) +
+  geom_bar(stat = "identity", position = "dodge") +
+  scale_fill_manual(values = c("casual" = color_casual, "member" = color_member)) +
+  labs(
+    title = "Ride Frequency by Part of Day",
+    x = "Part of Day",
+    y = "Total Rides",
+    fill = "Rider Type"
+  ) + 
+  theme_minimal()
+```
+
+### **Seasonal Trends**
+
+**Rides by Season**
+
+```{r}
+# Find the ride frequency by season by rider type.
+season_stats <- cyclistic_data %>% 
+  group_by(member_casual, season) %>% 
+  summarise(total_rides = n(),
+            .groups = "drop")
+
+# Visualize ride frequency by season.
+ggplot(
+  season_stats,
+  aes(
+    x = season,
+    y = total_rides,
+    fill = member_casual
+  )
+) + 
+  geom_bar(stat = "identity", position = "dodge") + 
+  scale_fill_manual(values = c("casual" = color_casual, "member" = color_member)) +
+  labs(
+    title = "Ride Frequency by Season",
+    x = "Season",
     y = "Total Rides",
     fill = "Rider Type"
   ) + 
