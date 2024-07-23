@@ -16,11 +16,15 @@ These are the libraries that we are going to use for this project.
 # install.packages("tidyverse")  # For data manipulation and ggplot2 for visualization
 # install.packages("lubridate")  # For handling date-time data
 # install.packages("readr")      # For reading CSV files efficiently
+# install.packages("scales")
+
 
 # Load the libraries
 library(tidyverse)
 library(lubridate)
 library(readr)
+library(scales)
+
 ```
 
 ## Load the Dataset
@@ -100,34 +104,33 @@ usage_stats <- cyclistic_data %>%
 print(usage_stats)
 
 # Visualize total rides for each rider type.
-ggplot(
-  usage_stats,
-  aes(
-    x = member_casual,
-    y = total_rides,
-    fill = member_casual
-  )
-) +
-  geom_bar(stat = "identity") +
+usage_stats <- usage_stats %>%
+  mutate(percentage = total_rides / sum(total_rides) * 100)
+
+# Create a pie chart with percentage labels
+ggplot(usage_stats, aes(x = "", y = total_rides, fill = member_casual)) +
+  geom_bar(stat = "identity", width = 1) +
+  coord_polar("y", start = 0) +
+  geom_text(
+    aes(label = paste0(round(percentage, 1), "%")),
+      position = position_stack(vjust = 0.5),
+      color = "white", size = 3.5) +
   scale_fill_manual(values = c("casual" = color_casual, "member" = color_member)) +
   labs(
     title = "Total Rides by Rider Type",
-    x = "Rider Type",
-    y = "Total Rides",
     fill = "Rider Type"
-    ) +
-  theme_minimal()
+  ) +
+  theme_void() +
+  theme(
+    legend.position = "right"
+  )
 
 # Visualize average ride length for each rider type.
-ggplot(
-  usage_stats,
-  aes(
-    x = member_casual,
-    y = (average_ride_length / 60),
-    fill = member_casual
-  )
-) +
+ggplot(usage_stats,aes(x = member_casual, y = (average_ride_length / 60), fill = member_casual)) +
   geom_bar(stat = "identity") +
+  geom_text(aes(label = sprintf("%.2f", average_ride_length / 60)), 
+    position = position_stack(vjust = 0.5),
+    color = "white", size = 3.5) +
   scale_fill_manual(values = c("casual" = color_casual, "member" = color_member)) +
   labs(
     title = "Average Ride Length by Rider Type",
@@ -138,15 +141,11 @@ ggplot(
   theme_minimal()
 
 # Visualize average trip distance for each rider type.
-ggplot(
-  usage_stats,
-  aes(
-    x = member_casual,
-    y = average_distance,
-    fill = member_casual
-  )
-) +
+ggplot(usage_stats,aes(x = member_casual, y = average_distance, fill = member_casual)) +
   geom_bar(stat = "identity") +
+  geom_text(aes(label = sprintf("%.2f", average_distance)), 
+    position = position_stack(vjust = 0.5), 
+    color = "white", size = 3.5) +
   scale_fill_manual(values = c("casual" = color_casual, "member" = color_member)) +
   labs(
     title = "Average Distance by Rider Type",
@@ -155,6 +154,7 @@ ggplot(
     fill = "Rider Type"
     ) +
   theme_minimal()
+
 ```
 
 ### **Temporal Analysis**
@@ -189,6 +189,7 @@ ggplot(
     fill = "Rider Type"
   ) + 
   theme_minimal()
+
 ```
 
 **Ride Frequency During Peak Hours**
@@ -290,6 +291,8 @@ ggplot(
 ```{r}
 # Find the ride frequency by season by rider type.
 season_stats <- cyclistic_data %>% 
+  mutate(season = factor(
+  season, levels = c("Winter", "Spring", "Summer", "Fall"))) %>%
   group_by(member_casual, season) %>% 
   summarise(total_rides = n(),
             .groups = "drop")
@@ -312,4 +315,29 @@ ggplot(
     fill = "Rider Type"
   ) + 
   theme_minimal()
+```
+
+```{r}
+# Extract hour and ensure it's used as a factor for proper grouping
+cyclistic_data <- cyclistic_data %>%
+  mutate(hour = hour(started_at)) %>%
+  mutate(hour = factor(hour, levels = 0:23, labels = paste0(0:23, "h")))  # Label hours as '0h', '1h', ..., '23h'
+
+# Aggregate data by hour and user type
+hourly_counts <- cyclistic_data %>%
+  group_by(hour, member_casual) %>%
+  summarise(total_rides = n(), .groups = "drop")
+
+# Plot the data
+ggplot(hourly_counts, aes(x = hour, y = total_rides, fill = member_casual)) +
+  geom_bar(stat = "identity", position = position_dodge()) +
+  labs(title = "Total Rides by Hour and User Type",
+       x = "Hour of the Day",
+       y = "Total Rides",
+       fill = "User Type") +
+  theme_minimal()
+
+print(started_at)
+print(hourly_counts)
+
 ```

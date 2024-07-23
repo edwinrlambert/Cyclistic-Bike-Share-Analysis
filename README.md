@@ -220,8 +220,8 @@ Rides longer than a day can be due to bikes not returned properly, possible thef
 
 **Observations**:
 
-- There are **262,293** (4.18%) of rows with shorter rides (less than a minute) out of which **53,281** (1.60%) of rows don't have either start station or end station.
-- There are **4,311** (0.12%) of rows with longer rides (longer than a day) out of which **4,233** (0.12%) of rows don't have either start station or end station.
+- There are **262,293** (4.58%) of rows with shorter rides (less than a minute) out of which **100,194** (1.75%) of rows don't have either start station or end station.
+- There are **6,418** (0.11%) of rows with longer rides (longer than a day) out of which **6,285** (0.10%) of rows don't have either start station or end station.
 
 **Action Item**:
 For this project, since the amount of data is comparatively less, I am going to consider them as outliers and remove them from the table. I have saved up the result as separate tables, if in case I have to analyze why this short and long rides are happening and whether they are happening with casual riders or with riders with membership.
@@ -232,22 +232,24 @@ Now, we're going to combine all the data from the start_station_name and end_sta
 
 **Observations**:
 
-- There are 8 stations with 2 IDs. Those are:
-  | Row | Station Name | Distinct ID Count | Station IDs |
-  |-----|-----------------------------------|-------------------|-------------|
-  | 1 | California Ave & Marquette Rd | 2 | 390, 21390 |
-  | 2 | Central Ave & Roscoe St | 2 | 396, 21396 |
-  | 3 | Kilpatrick Ave & Grand Ave | 2 | 374, 21374 |
-  | 4 | Kostner Ave & Wrightwood Ave | 2 | 321, 23321 |
-  | 5 | Lamon Ave & Armitage Ave | 2 | 357, 21357 |
-  | 6 | Lincoln Ave & Peterson Ave | 2 | 462, 21462 |
-  | 7 | Lockwood Ave & Wrightwood Ave | 2 | 312, 21312 |
-  | 8 | Parkside Ave & Armitage Ave | 2 | 354, 21354 |
+- There are 10 stations with 2 IDs. Those are:
+  | Row | station_name | distinct_id_count | station_ids |
+  |-----|-------------------------------|-------------------|----------------------------|
+  | 1 | Buckingham Fountain | 2 | 15541, 15541.1.1 |
+  | 2 | California Ave & Marquette Rd | 2 | 390, 21390 |
+  | 3 | Central Ave & Roscoe St | 2 | 396, 21396 |
+  | 4 | Kilpatrick Ave & Grand Ave | 2 | 374, 21374 |
+  | 5 | Kostner Ave & Wrightwood Ave | 2 | 23321, 321 |
+  | 6 | Lamon Ave & Armitage Ave | 2 | 357, 21357 |
+  | 7 | Lincoln Ave & Peterson Ave | 2 | 462, 21462 |
+  | 8 | Lockwood Ave & Wrightwood Ave | 2 | 312, 21312 |
+  | 9 | Parkside Ave & Armitage Ave | 2 | 354, 21354 |
+  | 10 | Wilton Ave & Diversey Pkwy\* | 2 | chargingstx2, chargingstx0 |
 
-  - Here we can notice, that the IDs are still unique, but the second ID have a '21' or '23' at the front.
+  - Here we can notice, that the IDs are still unique, but the second ID have a '21' or '23' at the front for a few, and .1.1 and tx0 instead of tx2.
 
 **Action Items**:  
-So, for the purpose, we're going to change the IDs without 21/23 to ones that have 21/23 to be consistent.
+So, for the purpose, we're going to change the IDs without 21/23 to ones that have 21/23 to be consistent. Keep the one 15541 and chargingstx0.
 
 #### **Finding station names with null end_lat or end_lng values.**
 
@@ -265,29 +267,33 @@ There are 5 distinct station names with null values for end_lat and end_lng. The
 
 Upon searching throughout the whole dataset for these distinct station names, we can find the latitude and longitude of these stations.
 
-| Row | End Station Name           | End Lat   | End Lng    |
-| --- | -------------------------- | --------- | ---------- |
-| 1   | Drexel Ave & 60th St       | null      | null       |
-| 2   | Drexel Ave & 60th St       | 41.785861 | -87.604553 |
-| 3   | Elizabeth St & Randolph St | null      | null       |
-| 4   | Elizabeth St & Randolph St | 41.884336 | -87.658902 |
-| 5   | Halsted St & Fulton St     | null      | null       |
-| 6   | Halsted St & Fulton St     | 41.886871 | -87.648089 |
-| 7   | Lincoln Ave & Byron St     | null      | null       |
-| 8   | Lincoln Ave & Byron St     | 41.952372 | -87.677296 |
-| 9   | Stony Island Ave & 63rd St | null      | null       |
-| 10  | Stony Island Ave & 63rd St | 0.0       | 0.0        |
-| 11  | Stony Island Ave & 63rd St | 41.780506 | -87.586853 |
+| Row | end_station_name           | end_lat      | end_lng       |
+| --- | -------------------------- | ------------ | ------------- |
+| 1   | Drexel Ave & 60th St       | null         | null          |
+| 2   | Drexel Ave & 60th St       | 41.785861    | -87.604553    |
+| 3   | Elizabeth St & Randolph St | null         | null          |
+| 4   | Elizabeth St & Randolph St | 41.88        | -87.66        |
+| 5   | Elizabeth St & Randolph St | 41.884336    | -87.658902    |
+| 6   | Halsted St & Fulton St     | null         | null          |
+| 7   | Halsted St & Fulton St     | 41.886847258 | -87.648195028 |
+| 8   | Halsted St & Fulton St     | 41.886871    | -87.648089    |
+| 9   | Halsted St & Fulton St     | 41.89        | -87.65        |
+| 10  | Lincoln Ave & Byron St     | null         | null          |
+| 11  | Lincoln Ave & Byron St     | 41.95        | -87.68        |
+| 12  | Lincoln Ave & Byron St     | 41.952372    | -87.677296    |
+| 13  | Stony Island Ave & 63rd St | null         | null          |
+| 14  | Stony Island Ave & 63rd St | 0.0          | 0.0           |
+| 15  | Stony Island Ave & 63rd St | 41.78        | -87.59        |
+| 16  | Stony Island Ave & 63rd St | 41.780506    | -87.586853    |
 
 **Observation**:
 
 - We can see that for **Stony Island Ave & 63rd St**, there is a value as 0.0 for latitude and longitude. Therefore, let's search throughout the start_lat, start_lng and end_lat, end_lng for values with 0.0 as the values.
-  - Upon running the query, I found that there are no values for start station names with start_lat and start_lng with 0.0 as the value.
-  - And for end station names, I found it's only the one value of "Stony Island Ave & 63rd St" that have 0.0 as the value.
+  - Upon running the query, I found that "OH Charging Stx - Test" for end station names with start_lat and start_lng with 0.0 as the value.
 
 **Action Item**:
 
-- We're going to fill in the value for the null and 0.0 values in end_lat and end_lng to the same value mentioned above.
+- We're going to fill in the value for the null and 0.0 values in end_lat and end_lng to the same value mentioned above and remove unnecessary rows.
 
 #### **Finding the member types available in this dataset**
 
@@ -303,12 +309,15 @@ Based on our exploration, we are going to clean the data step by step. We are us
 1. First, we create a query to drop the cleaned table, if existing.
 2. Then we create the cleaned table as
    1. Exclude trips that are shorter than one minute or longer than one day as outliers, in the assumption that shorter rides were workers and people testing the bikes, or unsatisfied by the condition of the bikes and that longer rides are people forgetting to return the bikes or the bikes being stolen.
-   2. Replace specific duplicate station IDs with unique identifiers that starts with 21/23.
+   2. Replace specific duplicate station IDs with unique identifiers.
    3. Find the minimum latitude and longitude for each station to handle missing values.
    4. Use the minimum coordinates found in the previous step to fill in missing values for end coordinates.
    5. Replace null station names with "Unknown" and null station IDs with '0'.
    6. Exclude rows that lack end destination information.
-   7. Finalize the table with all cleaned data.
+   7. Exclude rows with zero coordinates
+   8. Finalize the table with all cleaned data.
+
+After cleaning the data, we have **5,449,486** left to work with.
 
 ## **III. PROCESS**
 
@@ -340,4 +349,3 @@ Here are the columns created in this SQL script:
 ## **IV. ANALYZE**
 
 Now, I am going to analyze the new table using R.
-
