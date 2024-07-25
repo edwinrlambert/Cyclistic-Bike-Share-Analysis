@@ -13,17 +13,20 @@ These are the libraries that we are going to use for this project.
 
 ```{r}
 # # Install packages if they are not already installed
-# install.packages("tidyverse")  # For data manipulation and ggplot2 for visualization
-# install.packages("lubridate")  # For handling date-time data
-# install.packages("readr")      # For reading CSV files efficiently
-# install.packages("scales")
+if (!requireNamespace("tidyverse", quietly = TRUE)) install.packages("tidyverse") 
+if (!requireNamespace("lubridate", quietly = TRUE)) install.packages("lubridate") 
+if (!requireNamespace("readr", quietly = TRUE)) install.packages("readr") 
+if (!requireNamespace("scales", quietly = TRUE)) install.packages("scales")
+if (!requireNamespace("leaflet", quietly = TRUE)) install.packages("leaflet")
+if (!requireNamespace("leaflet.extras", quietly = TRUE)) install.packages("leaflet.extras")
 
 
 # Load the libraries
 library(tidyverse)
 library(lubridate)
 library(readr)
-library(scales)
+library(leaflet)
+library(leaflet.extras)
 
 ```
 
@@ -33,63 +36,115 @@ We're going to upload the CSV file for analysis.
 
 ```{r}
 # Load the CSV file to the DataFrame
-cyclistic_data <- read_csv("../../dataset/cleaned/2023_cyclistic_tripdata.csv", col_types = cols(
-  ride_id = col_character(),
-  rideable_type = col_character(),
-  started_at = col_datetime(format = "%Y-%m-%d %H:%M:%S"),
-  ended_at = col_datetime(format = "%Y-%m-%d %H:%M:%S"),
-  day_of_week = col_integer(),
-  is_peak_hour = col_character(),
-  is_weekend = col_character(),
-  day_part = col_character(),
-  season = col_character(),
-  ride_length = col_time(format = "%H:%M:%S"),
-  ride_type = col_character(),
-  start_station_name = col_character(),
-  start_station_id = col_character(),
-  end_station_name = col_character(),
-  end_station_id = col_character(),
-  start_lat = col_double(),
-  start_lng = col_double(),
-  end_lat = col_double(),
-  end_lng = col_double(),
-  trip_distance = col_double(),
-  member_casual = col_character()
-))
-
-# Modify the day_of_week column to use day names instead of numbers
-cyclistic_data <- cyclistic_data %>%
-  mutate(day_of_week = factor(day_of_week, 
+cyclistic_data <- read_csv("../../dataset/cleaned/2023_cyclistic_tripdata.csv", 
+  col_types = cols(
+    started_at = col_datetime(format = "%Y-%m-%d %H:%M:%S %Z"),
+    ended_at = col_datetime(format = "%Y-%m-%d %H:%M:%S %Z"),
+    day_of_week = col_integer(),
+    ride_length = col_time(format = "%H:%M:%S"),
+    .default = col_guess()
+)) %>% 
+  mutate(
+    # Modify the day_of_week column to use day names instead of numbers.
+    day_of_week = factor(day_of_week, 
                               levels = 1:7, 
-                              labels = c("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday")))
+                              labels = c("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday")),
+    # Convert ride_length to seconds and overwrite the original column
+    ride_length = as.numeric(ride_length, units = "secs")
+    )
 
-# Convert ride_length to seconds and overwrite the original column
-cyclistic_data <- cyclistic_data %>%
-  mutate(ride_length = as.numeric(ride_length, units = "secs"))
-
-# Check the structure of the data
+# Check the structure of the data and print a few rows of the dataset.
 str(cyclistic_data)
-
-# Print rows from the DataFrame.
 head(cyclistic_data)
 
 ```
+
+## Create custom functions and variables
+
+We are going to create some variables and functions that we can use going forward in our analysis.
 
 ```{r}
 # Set pre-defined colors for each type.
 color_casual <- "#FF5733" # Orange
 color_member <- "#2E86C1" # Blue
+color_data_point <- "#FFFFFF" # White
 ```
 
-## **Descriptive Analysis**
+```{r}
+# Custom function to format numbers with K and M
+format_k_m <- function(x) {
+  ifelse(x >= 1e6, paste0(x / 1e6, "M"),
+         ifelse(x >= 1e3, paste0(x / 1e3, "K"), x))
+}
+```
+
+```{r}
+# Custom function to create plots.
+create_plot <- function(
+    data, 
+    x_var = NULL, y_var = NULL, fill_var = NULL, 
+    plot_type = "bar",
+    title, x_label = NULL, y_label = NULL) {
+  
+    # Set the base aesthetics for the plots.
+    if (plot_type == "pie") {
+      base_aes <- aes(x = "", y = !!sym(y_var), 
+                      fill = !!sym(fill_var), color = !!sym(fill_var))
+    } else {
+      base_aes <- aes(x = if (!is.null(x_var)) !!sym(x_var) else NULL, 
+                      y = !!sym(y_var), 
+                      fill = !!sym(fill_var), color = !!sym(fill_var))
+    }
+    
+    # Create base ggplot objects.
+    base_plot <- ggplot(data, base_aes) +
+      scale_fill_manual(
+        values = c("casual" = color_casual, "member" = color_member)) +
+      scale_color_manual(
+        values = c("casual" = color_casual, "member" = color_member)) +
+      scale_y_continuous(labels = format_k_m) +
+      labs(title = title, x = x_label, y = y_label, 
+           fill = "Rider Type", color = "Rider Type") +
+      theme_minimal()
+    
+    # Set the geom objects for each plots.
+    if (plot_type == "bar") {
+      base_plot <- base_plot +
+        geom_bar(stat = "identity", position = position_dodge())
+  } else if (plot_type == "pie") {
+      base_plot <- base_plot +
+        geom_bar(stat = "identity", width = 1) +
+        coord_polar("y", start = 0) +
+        geom_text(
+          aes(label = sprintf("%.1f%%", (!!sym(y_var) / sum(!!sym(y_var))) * 100)),
+          position = position_stack(vjust = 0.5),
+          color = color_data_point, size = 4) +
+        theme_void()
+  } else if (plot_type == "line") {
+      base_plot <- base_plot +
+        geom_line(size = 1) +
+        geom_point(size = 2)
+  }
+  
+  if (!is.null(x_var) && x_var == "hour") {
+    base_plot <- base_plot +
+      scale_x_continuous(breaks = 0:23, labels = paste0(0:23, ":00")) +
+      theme(axis.text.x = element_text(angle = 90, hjust = 1))
+  }
+
+  return(base_plot)
+}
+```
+
+## Exploratory Data Analysis
+
+### **Descriptive Analysis**
 
 Descriptive analysis in the context of bike-sharing data involves summarizing the main characteristics of the dataset to provide a clear understanding of how casual riders and annual members use the Cyclistic bikes.
 
 The objective of conducting a descriptive analysis in this project is to establish a foundational understanding of the data at hand.
 
-### Overall Usage Statistics
-
-**Total Rides, Average Ride Length and Average Distance**
+#### Overall Usage Statistics
 
 ```{r}
 # Find the average ride_length and distance by rider type.
@@ -99,62 +154,41 @@ usage_stats <- cyclistic_data %>%
     total_rides = n(),
     average_ride_length = mean(ride_length),
     average_distance = mean(trip_distance)
-  )
+  )  %>%
+  # Visualize the percentage of total rides for each rider type.
+  mutate(percentage = total_rides / sum(total_rides) * 100,
+         avg_ride_min = average_ride_length / 60)
 
-print(usage_stats)
-
-# Visualize total rides for each rider type.
-usage_stats <- usage_stats %>%
-  mutate(percentage = total_rides / sum(total_rides) * 100)
-
-# Create a pie chart with percentage labels
-ggplot(usage_stats, aes(x = "", y = total_rides, fill = member_casual)) +
-  geom_bar(stat = "identity", width = 1) +
-  coord_polar("y", start = 0) +
-  geom_text(
-    aes(label = paste0(round(percentage, 1), "%")),
-      position = position_stack(vjust = 0.5),
-      color = "white", size = 3.5) +
-  scale_fill_manual(values = c("casual" = color_casual, "member" = color_member)) +
-  labs(
-    title = "Total Rides by Rider Type",
-    fill = "Rider Type"
-  ) +
-  theme_void() +
-  theme(
-    legend.position = "right"
-  )
+# Visualize a pie chart with total rides as percentage labels
+total_rides_plot <- create_plot(
+  data = usage_stats,
+  x_var = NULL, y_var = "total_rides", fill_var = "member_casual",
+  plot_type = "pie",
+  title = "Total Rides by Rider Type"
+)
 
 # Visualize average ride length for each rider type.
-ggplot(usage_stats,aes(x = member_casual, y = (average_ride_length / 60), fill = member_casual)) +
-  geom_bar(stat = "identity") +
-  geom_text(aes(label = sprintf("%.2f", average_ride_length / 60)), 
-    position = position_stack(vjust = 0.5),
-    color = "white", size = 3.5) +
-  scale_fill_manual(values = c("casual" = color_casual, "member" = color_member)) +
-  labs(
-    title = "Average Ride Length by Rider Type",
-    x = "Rider Type",
-    y = "Average Ride Length (minutes)",
-    fill = "Rider Type"
-    ) +
-  theme_minimal()
+average_ride_length_plot <- create_plot(
+  data = usage_stats,
+  x_var = "member_casual", y_var = "avg_ride_min", fill_var = "member_casual",
+  plot_type = "bar",
+  title = "Average Ride Length by Rider Type",
+  x_label = "Rider Type", y_label = "Average Ride Length (minutes)"
+)
 
 # Visualize average trip distance for each rider type.
-ggplot(usage_stats,aes(x = member_casual, y = average_distance, fill = member_casual)) +
-  geom_bar(stat = "identity") +
-  geom_text(aes(label = sprintf("%.2f", average_distance)), 
-    position = position_stack(vjust = 0.5), 
-    color = "white", size = 3.5) +
-  scale_fill_manual(values = c("casual" = color_casual, "member" = color_member)) +
-  labs(
-    title = "Average Distance by Rider Type",
-    x = "Rider Type",
-    y = "Average Distance",
-    fill = "Rider Type"
-    ) +
-  theme_minimal()
+average_distance_plot <- create_plot(
+  data = usage_stats,
+  x_var = "member_casual", y_var = "average_distance", fill_var = "member_casual",
+  plot_type = "bar",
+  title = "Average Distance by Rider Type",
+  x_label = "Rider Type", y_label = "Average Distance"
+)
 
+# Print all plots.
+print(total_rides_plot)
+print(average_ride_length_plot)
+print(average_distance_plot)
 ```
 
 ### **Temporal Analysis**
@@ -171,24 +205,15 @@ ride_freq_by_day_of_week <- cyclistic_data %>%
   )
 
 # Visualize ride frequency by day of week.
-ggplot(
-  ride_freq_by_day_of_week,
-  aes(
-    x = day_of_week,
-    y = total_rides,
-    fill = member_casual
-  )
-) +
-  geom_bar(stat = "identity", position = "dodge") +
-  scale_y_continuous(labels = scales::comma) +  
-  scale_fill_manual(values = c("casual" = color_casual, "member" = color_member)) +
-  labs(
-    title = "Ride Frequency by Day of the Week",
-    x = "Day of Week",
-    y = "Total Rides",
-    fill = "Rider Type"
-  ) + 
-  theme_minimal()
+ride_freq_by_day_of_week_plot <- create_plot(
+  data = ride_freq_by_day_of_week,
+  x_var = "day_of_week", y_var ="total_rides", fill_var = "member_casual", "bar",
+  title = "Ride Frequency by Day of the Week", 
+  x_label = "Day of Week", y_label = "Total Rides"
+)
+
+print(ride_freq_by_day_of_week_plot)
+
 
 ```
 
@@ -211,7 +236,7 @@ ggplot(
   )
 ) +
   geom_bar(stat = "identity", position = "dodge") +
-  scale_y_continuous(labels = scales::comma) +  
+  scale_y_continuous(labels = format_k_m) +  
   scale_fill_manual(values = c("casual" = color_casual, "member" = color_member)) +
   labs(
     title = "Ride Frequency During Peak Hours",
@@ -243,6 +268,7 @@ ggplot(
   )
 ) +
   geom_bar(stat = "identity", position = "dodge") +
+  scale_y_continuous(labels = format_k_m) +  
   scale_fill_manual(values = c("casual" = color_casual, "member" = color_member)) +
   labs(
     title = "Ride Frequency (Weekday vs. Weekend)",
@@ -274,6 +300,7 @@ ggplot(
   )
 ) +
   geom_bar(stat = "identity", position = "dodge") +
+  scale_y_continuous(labels = format_k_m) +  
   scale_fill_manual(values = c("casual" = color_casual, "member" = color_member)) +
   labs(
     title = "Ride Frequency by Part of Day",
@@ -282,6 +309,34 @@ ggplot(
     fill = "Rider Type"
   ) + 
   theme_minimal()
+```
+
+```{r}
+# Extract the hour from the 'started_at' column
+cyclistic_data <- cyclistic_data %>%
+  mutate(hour = hour(started_at))
+
+# Summarize the total rides by hour and rider type
+rides_by_hour <- cyclistic_data %>%
+  group_by(member_casual, hour) %>%
+  summarise(total_rides = n(),
+            .groups = "drop")
+
+# Create the line chart
+ggplot(rides_by_hour, aes(x = hour, y = total_rides, color = member_casual, group = member_casual)) +
+  geom_line(size = 1) +
+  geom_point(size = 2) +
+  scale_color_manual(values = c("casual" = color_casual, "member" = color_member)) +
+  scale_x_continuous(breaks = 0:23, labels = paste0(0:23, ":00")) +
+  scale_y_continuous(labels = format_k_m) +  
+  labs(
+    title = "Ride Frequency by Hour of the Day",
+    x = "Hour of the Day",
+    y = "Total Rides",
+    color = "Rider Type"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
 ```
 
 ### **Seasonal Trends**
@@ -307,6 +362,7 @@ ggplot(
   )
 ) + 
   geom_bar(stat = "identity", position = "dodge") + 
+  scale_y_continuous(labels = format_k_m) +  
   scale_fill_manual(values = c("casual" = color_casual, "member" = color_member)) +
   labs(
     title = "Ride Frequency by Season",
@@ -318,26 +374,32 @@ ggplot(
 ```
 
 ```{r}
-# Extract hour and ensure it's used as a factor for proper grouping
-cyclistic_data <- cyclistic_data %>%
-  mutate(hour = hour(started_at)) %>%
-  mutate(hour = factor(hour, levels = 0:23, labels = paste0(0:23, "h")))  # Label hours as '0h', '1h', ..., '23h'
+# Summarize ride counts for start stations
+start_station_popularity <- cyclistic_data %>%
+  group_by(start_lat, start_lng, member_casual) %>%
+  summarise(start_count = n(), .groups = 'drop')
 
-# Aggregate data by hour and user type
-hourly_counts <- cyclistic_data %>%
-  group_by(hour, member_casual) %>%
-  summarise(total_rides = n(), .groups = "drop")
+# Summarize ride counts for end stations
+end_station_popularity <- cyclistic_data %>%
+  group_by(end_lat, end_lng, member_casual) %>%
+  summarise(end_count = n(), .groups = 'drop')
 
-# Plot the data
-ggplot(hourly_counts, aes(x = hour, y = total_rides, fill = member_casual)) +
-  geom_bar(stat = "identity", position = position_dodge()) +
-  labs(title = "Total Rides by Hour and User Type",
-       x = "Hour of the Day",
-       y = "Total Rides",
-       fill = "User Type") +
-  theme_minimal()
+# Assuming the coordinates match exactly for starting and ending points
+total_station_popularity <- full_join(start_station_popularity, end_station_popularity, by = c("start_lat" = "end_lat", "start_lng" = "end_lng", "member_casual"))
 
-print(started_at)
-print(hourly_counts)
+# Adjusting column names and calculating total popularity
+total_station_popularity <- total_station_popularity %>%
+  mutate(total_count = start_count + end_count) %>%
+  select(lat = start_lat, lng = start_lng, member_casual, total_count)
 
+# Create a map for one user type at a time or both if preferred
+map <- leaflet(data = total_station_popularity) %>%
+  addTiles() %>%  # Add default OpenStreetMap tile layer
+  addHeatmap(lng = ~lng, lat = ~lat, intensity = ~total_count, blur = 20, max = 0.05, radius = 15) %>%
+  addLayersControl(
+    overlayGroups = c("Casual", "Member"),
+    options = layersControlOptions(collapsed = FALSE)
+  )
+
+map
 ```
