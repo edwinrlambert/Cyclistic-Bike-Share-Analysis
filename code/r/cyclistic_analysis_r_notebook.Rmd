@@ -48,9 +48,17 @@ cyclistic_data <- read_csv("../../dataset/cleaned/2023_cyclistic_tripdata.csv",
     # Modify the day_of_week column to use day names instead of numbers.
     day_of_week = factor(day_of_week, 
                               levels = 1:7, 
-                              labels = c("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday")),
+                              labels = c("Sunday", "Monday", "Tuesday", 
+                                         "Wednesday", "Thursday", 
+                                         "Friday", "Saturday")),
     # Convert ride_length to seconds and overwrite the original column
-    ride_length = as.numeric(ride_length, units = "secs")
+    ride_length = as.numeric(ride_length, units = "secs"),
+    # Update the rideable_type column to have more readable labels
+    rideable_type = factor(rideable_type, 
+                           levels = c("classic_bike", "docked_bike",
+                                      "electric_bike"),
+                           labels = c("Classic Bikes", "Docked Bikes", 
+                                      "Electric Bikes"))
     )
 
 # Check the structure of the data and print a few rows of the dataset.
@@ -65,9 +73,10 @@ We are going to create some variables and functions that we can use going forwar
 
 ```{r}
 # Set pre-defined colors for each type.
-color_casual <- "#FF5733" # Orange
-color_member <- "#2E86C1" # Blue
+color_casual <- "#FF6F61" # Coral
+color_member <- "#3498DB" # Medium Blue
 color_data_point <- "#FFFFFF" # White
+color_stations <- "#58D68D" # Medium Aquamarine
 ```
 
 ```{r}
@@ -80,52 +89,69 @@ format_k_m <- function(x) {
 
 ```{r}
 # Custom function to set base aesthetics
-set_base_aes <- function(plot_type, x_var, y_var, fill_var) {
+set_base_aes <- function(plot_type, x_var, y_var, fill_var = NULL) {
   if (plot_type == "pie") {
     aes(
       x = "", y = !!sym(y_var), 
-      fill = !!sym(fill_var), color = !!sym(fill_var)
+      fill = if (!is.null(fill_var)) !!sym(fill_var) else NULL, 
+      color = if (!is.null(fill_var)) !!sym(fill_var) else NULL
     )
   } else {
     aes(
       x = !!sym(x_var), y = !!sym(y_var), 
-      fill = !!sym(fill_var), color = !!sym(fill_var), 
-      group = !!sym(fill_var)
+      fill = if (!is.null(fill_var)) !!sym(fill_var) else NULL, 
+      color = if (!is.null(fill_var)) !!sym(fill_var) else NULL, 
+      group = if (!is.null(fill_var)) !!sym(fill_var) else NULL
     )
   }
 }
 
 # Custom function to set the base ggplot ojects.
-set_ggplot_objs <- function(data, base_aes, title, x_label, y_label) {
-  ggplot(data, base_aes) + 
-    scale_fill_manual(
-      values = c("casual" = color_casual, "member" = color_member)) +
-    scale_color_manual(
-      values = c("casual" = color_casual, "member" = color_member)) +
-    scale_y_continuous(labels = format_k_m, limits = c(0, NA)) +
+set_ggplot_objs <- function(data, base_aes, title, x_label, y_label, fill_label = "Category", color_label = "Category") {
+  plot <- ggplot(data, base_aes) +
+    scale_y_continuous(labels = scales::comma, limits = c(0, NA)) +
     labs(
       title = title, 
-      x = x_label, y = y_label, 
-      fill = "Rider Type", color = "Rider Type"
-      ) +
+      x = x_label, y = y_label
+    ) +
     theme_minimal()
+  
+  if (!is.null(base_aes$fill)) {
+    plot <- plot +
+      scale_fill_manual(
+        values = c("casual" = color_casual, "member" = color_member), 
+        na.translate = FALSE
+      ) +
+      scale_color_manual(
+        values = c("casual" = color_casual, "member" = color_member), 
+        na.translate = FALSE
+      ) +
+      labs(fill = fill_label, color = color_label)
+  }
+  
+  plot
 }
 
-# Custom function to add geom layer based on plot type.
-set_geom_layers <- function(base_plot, plot_type, x_var) {
+set_geom_layers <- function(base_plot, plot_type, flip = FALSE) {
   if (plot_type == "bar") {
-    base_plot + 
+    base_plot <- base_plot + 
       geom_bar(stat = "identity", position = position_dodge())
   } else if (plot_type == "pie") {
-    base_plot + 
+    base_plot <- base_plot + 
       geom_bar(stat = "identity", width = 1) +
       coord_polar("y", start = 0) +
       theme_void()
   } else if (plot_type == "line") {
-    base_plot + 
+    base_plot <- base_plot + 
       geom_line(size = 1) + 
       geom_point(size = 2)
   }
+  
+  if (plot_type == "bar" && flip) {
+    base_plot <- base_plot + coord_flip()
+  }
+  
+  return(base_plot)
 }
 
 # Custom function to add geom_text
@@ -162,14 +188,14 @@ customize_x_axis <- function(base_plot, x_var) {
 create_plot <- function(
     data, 
     x_var = NULL, y_var = NULL, fill_var = NULL, 
-    plot_type = "bar",
+    plot_type = "bar", flip = FALSE,
     title, x_label = NULL, y_label = NULL, 
     label_var = NULL, text_position = "stack", text_vjust = 0.5,
     text_color = color_data_point, text_size = 4) {
   
   base_aes <- set_base_aes(plot_type, x_var, y_var, fill_var)
   base_plot <- set_ggplot_objs(data, base_aes, title, x_label, y_label)
-  base_plot <- set_geom_layers(base_plot, plot_type, x_var)
+  base_plot <- set_geom_layers(base_plot, plot_type, flip)
   base_plot <- customize_x_axis(base_plot, x_var)
   
   if (!is.null(label_var)) {
@@ -237,6 +263,54 @@ average_distance_plot <- create_plot(
 print(total_rides_plot)
 print(average_ride_length_plot)
 print(average_distance_plot)
+```
+
+#### Rideable Type Analysis
+
+```{r}
+# Count the number of rides by each type of vehicle.
+rideable_counts <- cyclistic_data %>% 
+  group_by(member_casual, rideable_type) %>% 
+  summarise(
+    total_rides = n(),
+    .groups = "drop"
+  )
+
+# Visualize the total ride by each rideable type.
+rideable_counts_plot <- create_plot(
+  data = rideable_counts,
+  x_var = "rideable_type", y_var ="total_rides", fill_var = "member_casual", 
+  plot_type = "bar",
+  title = "Total Ride by each Rideable", 
+  x_label = "Rideable", y_label = "Total Rides"
+)
+
+print(rideable_counts_plot)
+```
+
+#### Most Population Station by Ride Count
+
+```{r}
+# Count the number of rides for each start station
+most_popular_start_station <- cyclistic_data %>%
+  filter(start_station_name != "Unknown") %>%
+  group_by(start_station_name) %>%
+  summarise(total_rides = n()) %>%
+  arrange(desc(total_rides)) %>%
+  head(10) %>%
+  mutate(start_station_name = factor(
+    start_station_name, levels = rev(start_station_name)))
+
+# Visualize number of rides for each start station
+most_popular_start_station_plot <- create_plot(
+  data = most_popular_start_station,
+  x_var = "start_station_name", y_var ="total_rides", fill_var = "color_stations", 
+  plot_type = "bar", flip = TRUE,
+  title = "Most Popular Start Stations by Ride Count", 
+  x_label = "Start Station", y_label = "Total Rides"
+)
+
+print(most_popular_start_station_plot)
 ```
 
 ### **Temporal Analysis**
